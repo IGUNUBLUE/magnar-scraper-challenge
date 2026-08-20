@@ -1,0 +1,21 @@
+{
+  "name": "magnar-scraper-challenge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTTP-only scraper for Peru Judiciary jurisprudence records.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "tsx src/index.ts",
+    "test": "tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}
