@@ -15,11 +15,13 @@ npm install
 
 ## Run
 
-Start the default general search, visit ten pages, and write `data/documents.json`:
+Start the default general search, visit every result page reported by the server, and write `data/documents.json`:
 
 ```bash
 npm start
 ```
+
+`--max-pages` is only a development limit. Omit it for a complete crawl.
 
 Keep the first live run small:
 

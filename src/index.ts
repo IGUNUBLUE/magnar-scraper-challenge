@@ -2,19 +2,20 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { PdfDownloader } from "./downloader.js";
 import { AxiosTransport } from "./http.js";
-import { extractDocuments, initialSearchRequest, paginationRequest, panelFromPartialResponse } from "./parser.js";
+import { extractDocuments, initialSearchRequest, paginationRequest, panelFromPartialResponse, resultPageCount } from "./parser.js";
 
 const DEFAULT_URL = "https://jurisprudencia.pj.gob.pe/jurisprudenciaweb/faces/page/inicio.xhtml";
 
-type Options = { url: string; maxPages: number; downloadPdfs: boolean; htmlFile?: string; query?: string };
+type Options = { url: string; maxPages?: number; downloadPdfs: boolean; htmlFile?: string; query?: string };
 
 function readOptions(arguments_: string[]): Options {
   const valueAfter = (flag: string) => {
     const position = arguments_.indexOf(flag);
     return position === -1 ? undefined : arguments_[position + 1];
   };
-  const maxPages = Number(valueAfter("--max-pages") ?? "10");
-  if (!Number.isInteger(maxPages) || maxPages < 1) throw new Error("--max-pages must be a positive integer");
+  const maxPagesValue = valueAfter("--max-pages");
+  const maxPages = maxPagesValue === undefined ? undefined : Number(maxPagesValue);
+  if (maxPages !== undefined && (!Number.isInteger(maxPages) || maxPages < 1)) throw new Error("--max-pages must be a positive integer");
   return { url: valueAfter("--url") ?? DEFAULT_URL, maxPages, downloadPdfs: arguments_.includes("--download-pdfs"), htmlFile: valueAfter("--html-file"), query: valueAfter("--query") };
 }
 
@@ -46,8 +47,10 @@ async function scrape(): Promise<void> {
     }
   }
 
+  const totalPages = options.htmlFile ? 1 : resultPageCount(resultHtml);
+  const pagesToVisit = Math.min(options.maxPages ?? totalPages, totalPages);
   const documents = [];
-  for (let page = 1; page <= options.maxPages; page += 1) {
+  for (let page = 1; page <= pagesToVisit; page += 1) {
     let pageHtml = resultHtml;
     if (page > 1) {
       const request = paginationRequest(resultHtml, resultUrl, page);

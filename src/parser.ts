@@ -86,3 +86,9 @@ export function panelFromPartialResponse(xml: string): string {
   if (!match) throw new Error("Partial response did not include the document panel");
   return match[1];
 }
+
+export function resultPageCount(html: string): number {
+  const match = html.match(/maxValue:\s*(\d+)/);
+  if (!match) throw new Error("Could not determine the total number of result pages");
+  return Number(match[1]);
+}

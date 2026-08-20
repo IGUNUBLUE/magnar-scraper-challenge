@@ -29,12 +29,18 @@ export class PdfDownloader {
     for (let attempt = 0; attempt < this.attempts; attempt += 1) {
       try {
         const response = await this.http.get(document.pdfUrl, true);
-        if (response.status >= 200 && response.status < 300 && response.data instanceof Uint8Array) {
+        const startsWithPdf = response.data instanceof Uint8Array
+          && response.data[0] === 37
+          && response.data[1] === 80
+          && response.data[2] === 68
+          && response.data[3] === 70;
+        const isPdf = response.headers["content-type"]?.includes("application/pdf") || startsWithPdf;
+        if (response.status >= 200 && response.status < 300 && response.data instanceof Uint8Array && isPdf) {
           await writeFile(join(this.downloadDirectory, filenameFor(document)), response.data);
           return "downloaded";
         }
-        if (response.status !== 429) throw new Error(`HTTP ${response.status}`);
-        await sleep(retryDelay(attempt, response.headers["retry-after"]));
+        if (response.status !== 429) throw new Error(`HTTP ${response.status} or non-PDF response`);
+        if (attempt < this.attempts - 1) await sleep(retryDelay(attempt, response.headers["retry-after"]));
       } catch (error) {
         if (attempt === this.attempts - 1) break;
         await sleep(retryDelay(attempt, undefined));
